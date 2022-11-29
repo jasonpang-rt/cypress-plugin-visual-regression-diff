@@ -77,8 +77,6 @@ before(() => {
 after(() => {
   if (!top) return null;
 
-  cy.task(TASK.cleanupImages, { log: false });
-
   Cypress.$(top.document.body).on(
     "click",
     `a[href^="${LINK_PREFIX}"]`,
@@ -102,44 +100,46 @@ after(() => {
       );
       queueClear();
 
-      cy.task<boolean>(
-        TASK.doesFileExist,
-        { path: imgPath },
-        { log: false }
-      ).then((wasImageNotUpdatedYet) => {
-        if (!top) return false;
-        queueClear();
+      cy.task(TASK.cleanupImages, { log: false }).then(() => {
+        cy.task<boolean>(
+          TASK.doesFileExist,
+          { path: imgPath },
+          { log: false }
+        ).then((wasImageNotUpdatedYet) => {
+          if (!top) return false;
+          queueClear();
 
-        Cypress.$(
-          generateOverlayTemplate({
-            title,
-            imgNewBase64,
-            imgOldBase64,
-            imgDiffBase64,
-            error,
-            wasImageNotUpdatedYet,
-          })
-        ).appendTo(top.document.body);
+          Cypress.$(
+            generateOverlayTemplate({
+              title,
+              imgNewBase64,
+              imgOldBase64,
+              imgDiffBase64,
+              error,
+              wasImageNotUpdatedYet,
+            })
+          ).appendTo(top.document.body);
 
-        const wrapper = Cypress.$(`.${OVERLAY_CLASS}`, top.document.body);
-        wrapper.on("click", 'button[data-type="close"]', function () {
-          wrapper.remove();
+          const wrapper = Cypress.$(`.${OVERLAY_CLASS}`, top.document.body);
+          wrapper.on("click", 'button[data-type="close"]', function () {
+            wrapper.remove();
+          });
+
+          wrapper.on("submit", "form", function (e) {
+            e.preventDefault();
+
+            cy.task(TASK.approveImage, { img: imgPath }).then(() =>
+              wrapper.remove()
+            );
+
+            queueRun();
+          });
         });
 
-        wrapper.on("submit", "form", function (e) {
-          e.preventDefault();
+        queueRun();
 
-          cy.task(TASK.approveImage, { img: imgPath }).then(() =>
-            wrapper.remove()
-          );
-
-          queueRun();
-        });
+        return false;
       });
-
-      queueRun();
-
-      return false;
     }
   );
 });
