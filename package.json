@@ -48,7 +48,6 @@
   },
   "license": "MIT",
   "scripts": {
-    "prepare": "npm run build",
     "build": "del-cli dist && microbundle src/{support,plugins,constants}.ts --target node --tsconfig tsconfig.build.json -f cjs,modern && cpy 'dist/src/*' dist && del-cli dist/src \"dist/*.{hook,utils}.d.ts\"",
     "lint": "eslint '**/*.ts' --ignore-pattern '**/*.d.ts'",
     "lint:fix": "yarn lint --fix",
